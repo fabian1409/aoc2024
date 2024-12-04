@@ -5,8 +5,6 @@ const M: u8 = 77;
 const A: u8 = 65;
 const S: u8 = 83;
 
-const XMAS: [u8; 4] = [X, M, A, S];
-const SAMX: [u8; 4] = [S, A, M, X];
 const MAS: [u8; 3] = [M, A, S];
 const SAM: [u8; 3] = [S, A, M];
 
@@ -41,67 +39,79 @@ impl AdventOfCodeDay for Solver {
 
         for row in 0..rows {
             for col in 0..cols {
-                // TODO merge duplicate array accesses
-                // only check if cur is X or S, or if right to left diag is X or S
-                if data[index(row, col)] == X
-                    || data[index(row, col)] == S
-                    || (col < cols - 3
-                        && (data[index(row, col + 3)] == X || data[index(row, col + 3)] == S))
-                {
-                    if row < rows - 3 && col < cols - 3 {
-                        let h0 = data[index(row, col)];
-                        let h1 = data[index(row, col + 1)];
-                        let h2 = data[index(row, col + 2)];
-                        let h3 = data[index(row, col + 3)];
-                        let v0 = data[index(row, col)];
-                        let v1 = data[index(row + 1, col)];
-                        let v2 = data[index(row + 2, col)];
-                        let v3 = data[index(row + 3, col)];
-                        let da0 = data[index(row, col)];
-                        let da1 = data[index(row + 1, col + 1)];
-                        let da2 = data[index(row + 2, col + 2)];
-                        let da3 = data[index(row + 3, col + 3)];
-                        let db0 = data[index(row, col + 3)];
-                        let db1 = data[index(row + 1, col + 2)];
-                        let db2 = data[index(row + 2, col + 1)];
-                        let db3 = data[index(row + 3, col)];
-
-                        let h = [h0, h1, h2, h3];
-                        let v = [v0, v1, v2, v3];
-                        let da = [da0, da1, da2, da3];
-                        let db = [db0, db1, db2, db3];
-
-                        if h == XMAS
-                            || h == SAMX
-                            || v == XMAS
-                            || v == SAMX
-                            || da == XMAS
-                            || da == SAMX
-                            || db == XMAS
-                            || db == SAMX
-                        {
+                if data[index(row, col)] == X {
+                    let north = row >= 3;
+                    let east = col < cols - 3;
+                    let south = row < rows - 3;
+                    let west = col >= 3;
+                    if north {
+                        let n0 = data[index(row - 1, col)];
+                        let n1 = data[index(row - 2, col)];
+                        let n2 = data[index(row - 3, col)];
+                        if [n0, n1, n2] == MAS {
                             count += 1;
                         }
-                    } else if row < rows - 3 {
-                        let v0 = data[index(row, col)];
-                        let v1 = data[index(row + 1, col)];
-                        let v2 = data[index(row + 2, col)];
-                        let v3 = data[index(row + 3, col)];
+                    }
 
-                        let v = [v0, v1, v2, v3];
-
-                        if v == XMAS || v == SAMX {
+                    if north && east {
+                        let ne0 = data[index(row - 1, col + 1)];
+                        let ne1 = data[index(row - 2, col + 2)];
+                        let ne2 = data[index(row - 3, col + 3)];
+                        if [ne0, ne1, ne2] == MAS {
                             count += 1;
                         }
-                    } else if col < cols - 3 {
-                        let h0 = data[index(row, col)];
-                        let h1 = data[index(row, col + 1)];
-                        let h2 = data[index(row, col + 2)];
-                        let h3 = data[index(row, col + 3)];
+                    }
 
-                        let h = [h0, h1, h2, h3];
+                    if east {
+                        let e0 = data[index(row, col + 1)];
+                        let e1 = data[index(row, col + 2)];
+                        let e2 = data[index(row, col + 3)];
+                        if [e0, e1, e2] == MAS {
+                            count += 1;
+                        }
+                    }
 
-                        if h == XMAS || h == SAMX {
+                    if south && east {
+                        let se0 = data[index(row + 1, col + 1)];
+                        let se1 = data[index(row + 2, col + 2)];
+                        let se2 = data[index(row + 3, col + 3)];
+                        if [se0, se1, se2] == MAS {
+                            count += 1;
+                        }
+                    }
+
+                    if south {
+                        let s0 = data[index(row + 1, col)];
+                        let s1 = data[index(row + 2, col)];
+                        let s2 = data[index(row + 3, col)];
+                        if [s0, s1, s2] == MAS {
+                            count += 1;
+                        }
+                    }
+
+                    if south && west {
+                        let sw0 = data[index(row + 1, col - 1)];
+                        let sw1 = data[index(row + 2, col - 2)];
+                        let sw2 = data[index(row + 3, col - 3)];
+                        if [sw0, sw1, sw2] == MAS {
+                            count += 1;
+                        }
+                    }
+
+                    if west {
+                        let w0 = data[index(row, col - 1)];
+                        let w1 = data[index(row, col - 2)];
+                        let w2 = data[index(row, col - 3)];
+                        if [w0, w1, w2] == MAS {
+                            count += 1;
+                        }
+                    }
+
+                    if north && west {
+                        let nw0 = data[index(row - 1, col - 1)];
+                        let nw1 = data[index(row - 2, col - 2)];
+                        let nw2 = data[index(row - 3, col - 3)];
+                        if [nw0, nw1, nw2] == MAS {
                             count += 1;
                         }
                     }
