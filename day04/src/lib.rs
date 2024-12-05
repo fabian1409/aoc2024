@@ -17,12 +17,14 @@ impl AdventOfCodeDay for Solver {
 
     fn parse_input(input: &str) -> Self::ParsedInput<'_> {
         let mut rows = 0;
-        let cols = input.lines().next().unwrap().len();
+        let mut cols = 0;
         let data = input
             .lines()
             .flat_map(|line| {
+                let row = line.as_bytes().to_vec();
+                cols = row.len();
                 rows += 1;
-                line.chars().map(|c| c.to_ascii_uppercase() as u8)
+                row
             })
             .collect();
         (data, rows, cols)
