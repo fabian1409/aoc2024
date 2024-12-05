@@ -7,5 +7,6 @@ edition = "2021"
 
 [dependencies]
 aoc-traits = { workspace = true }
+intmap = "2.0.0"
 itertools = "0.13"
 
