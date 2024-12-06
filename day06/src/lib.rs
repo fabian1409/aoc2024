@@ -1,6 +1,8 @@
+use std::{collections::HashSet, fs::DirEntry};
+
 use aoc_traits::AdventOfCodeDay;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub enum Direction {
     Up,
     Down,
@@ -103,7 +105,88 @@ impl AdventOfCodeDay for Solver {
     }
 
     fn solve_part2(input: &Self::ParsedInput<'_>) -> Self::Part2Output {
-        todo!()
+        let data = input.0.clone();
+        let rows = data.len();
+        let cols = data[0].len();
+        let (r, c) = input.1;
+        let dir = input.2;
+
+        let terminates = |data: &[Vec<u8>], mut r: usize, mut c: usize, mut dir: Direction| {
+            let mut visited = HashSet::new();
+            visited.insert((r, c, dir));
+            loop {
+                let offset = dir.offset();
+                let next_r = r as isize + offset.0;
+                let next_c = c as isize + offset.1;
+
+                if next_r >= rows as isize || next_r < 0 || next_c >= cols as isize || next_c < 0 {
+                    break true;
+                }
+
+                let peek = data[next_r as usize][next_c as usize];
+
+                if peek == b'#' {
+                    dir = match dir {
+                        Direction::Up => Direction::Right,
+                        Direction::Down => Direction::Left,
+                        Direction::Left => Direction::Up,
+                        Direction::Right => Direction::Down,
+                    };
+                } else {
+                    r = next_r as usize;
+                    c = next_c as usize;
+                    if !visited.insert((r, c, dir)) {
+                        break false;
+                    }
+                }
+            }
+        };
+
+        let path = |data: &[Vec<u8>], mut r: usize, mut c: usize, mut dir: Direction| {
+            let mut p = vec![vec![false; cols]; rows];
+            loop {
+                p[r][c] = true;
+
+                let offset = dir.offset();
+                let next_r = r as isize + offset.0;
+                let next_c = c as isize + offset.1;
+
+                if next_r >= rows as isize || next_r < 0 || next_c >= cols as isize || next_c < 0 {
+                    return p;
+                }
+
+                let peek = data[next_r as usize][next_c as usize];
+
+                if peek == b'#' {
+                    dir = match dir {
+                        Direction::Up => Direction::Right,
+                        Direction::Down => Direction::Left,
+                        Direction::Left => Direction::Up,
+                        Direction::Right => Direction::Down,
+                    };
+                } else {
+                    r = next_r as usize;
+                    c = next_c as usize;
+                }
+            }
+        };
+
+        let p = path(&data, r, c, dir);
+
+        let mut count = 0;
+        for row in 0..rows {
+            for col in 0..cols {
+                if p[row][col] {
+                    let mut d = data.clone();
+                    d[row][col] = b'#';
+                    if !terminates(&d, r, c, dir) {
+                        count += 1;
+                    }
+                }
+            }
+        }
+
+        count
     }
 }
 
@@ -133,6 +216,6 @@ mod tests {
     #[test]
     fn test_part2() {
         let parsed = Solver::parse_input(INPUT);
-        assert_eq!(Solver::solve_part2(&parsed), 31);
+        assert_eq!(Solver::solve_part2(&parsed), 6);
     }
 }
