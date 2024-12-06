@@ -170,18 +170,19 @@ impl AdventOfCodeDay for Solver {
                 }
             }
         };
-
+        
         let p = path(&data, r, c, dir);
+        let mut d = data.clone();
 
         let mut count = 0;
         for row in 0..rows {
             for col in 0..cols {
                 if p[row][col] {
-                    let mut d = data.clone();
                     d[row][col] = b'#';
                     if !terminates(&d, r, c, dir) {
                         count += 1;
                     }
+                    d[row][col] = b'.';
                 }
             }
         }
