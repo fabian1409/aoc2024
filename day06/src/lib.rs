@@ -1,13 +1,11 @@
-use std::{collections::HashSet, fs::DirEntry};
-
 use aoc_traits::AdventOfCodeDay;
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub enum Direction {
-    Up,
-    Down,
-    Left,
-    Right,
+    Up = 0,
+    Down = 1,
+    Left = 2,
+    Right = 3,
 }
 
 impl Direction {
@@ -112,8 +110,8 @@ impl AdventOfCodeDay for Solver {
         let dir = input.2;
 
         let terminates = |data: &[Vec<u8>], mut r: usize, mut c: usize, mut dir: Direction| {
-            let mut visited = HashSet::new();
-            visited.insert((r, c, dir));
+            let mut visited = vec![vec![[false; 4]; cols]; rows];
+            visited[r][c][dir as usize] = true;
             loop {
                 let offset = dir.offset();
                 let next_r = r as isize + offset.0;
@@ -135,9 +133,10 @@ impl AdventOfCodeDay for Solver {
                 } else {
                     r = next_r as usize;
                     c = next_c as usize;
-                    if !visited.insert((r, c, dir)) {
+                    if visited[r][c][dir as usize] {
                         break false;
                     }
+                    visited[r][c][dir as usize] = true;
                 }
             }
         };
@@ -170,7 +169,7 @@ impl AdventOfCodeDay for Solver {
                 }
             }
         };
-        
+
         let p = path(&data, r, c, dir);
         let mut d = data.clone();
 
