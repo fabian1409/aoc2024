@@ -32,14 +32,15 @@ impl AdventOfCodeDay for Solver {
                 }
             }
         }
-
+        let mut start = 0;
         for i in (0..disk_map.len()).rev() {
             let d = disk_map[i];
             if d.is_some() {
-                for j in 0..i {
+                for j in start..i {
                     if disk_map[j].is_none() {
                         disk_map[j] = d;
                         disk_map[i] = None;
+                        start = j + 1;
                         break;
                     }
                 }
