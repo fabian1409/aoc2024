@@ -1,4 +1,29 @@
 use aoc_traits::AdventOfCodeDay;
+use memoize::memoize;
+
+#[memoize]
+fn apply(stone: u64, depth: usize) -> usize {
+    let mut count = 0;
+    if depth == 0 {
+        return count;
+    }
+
+    let digits = if stone != 0 { stone.ilog10() + 1 } else { 0 };
+    if stone == 0 {
+        count += apply(stone + 1, depth - 1);
+    } else if digits % 2 == 0 {
+        let factor = 10u64.pow(digits / 2);
+        let left = stone / factor;
+        let right = stone - left * factor;
+        count += 1;
+        count += apply(left, depth - 1);
+        count += apply(right, depth - 1);
+    } else {
+        count += apply(stone * 2024, depth - 1);
+    }
+
+    count
+}
 
 #[derive(Default)]
 pub struct Solver;
@@ -12,39 +37,26 @@ impl AdventOfCodeDay for Solver {
     }
 
     fn solve_part1(input: &Self::ParsedInput<'_>) -> Self::Part1Output {
-        let mut stones = input.clone();
-
-        for _ in 0..25 {
-            let mut i = 0;
-            while i != stones.len() {
-                let stone = stones[i];
-                let digits = if stone != 0 { stone.ilog10() + 1 } else { 0 };
-                if stone == 0 {
-                    stones[i] = 1;
-                } else if digits % 2 == 0 {
-                    let factor = 10u64.pow(digits / 2);
-                    let left = stone / factor;
-                    let right = stone - left * factor;
-                    stones[i] = left;
-                    stones.insert(i + 1, right);
-                    i += 1;
-                } else {
-                    stones[i] = stone * 2024;
-                }
-                i += 1;
-            }
+        let mut count = input.len();
+        for stone in input {
+            count += apply(*stone, 25);
         }
-
-        stones.len()
+        count
     }
 
     fn solve_part2(input: &Self::ParsedInput<'_>) -> Self::Part2Output {
-        todo!()
+        let mut count = input.len();
+        for stone in input {
+            count += apply(*stone, 75);
+        }
+        count
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use std::time::Instant;
+
     use crate::Solver;
     use aoc_traits::AdventOfCodeDay;
 
@@ -58,7 +70,9 @@ mod tests {
 
     #[test]
     fn test_part2() {
+        let start = Instant::now();
         let parsed = Solver::parse_input(INPUT);
-        assert_eq!(Solver::solve_part2(&parsed), 0);
+        assert_eq!(Solver::solve_part2(&parsed), 223767210249237);
+        println!("took {}", start.elapsed().as_micros());
     }
 }
