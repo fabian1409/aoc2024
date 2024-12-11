@@ -3,26 +3,20 @@ use memoize::memoize;
 
 #[memoize]
 fn apply(stone: u64, depth: usize) -> usize {
-    let mut count = 0;
     if depth == 0 {
-        return count;
+        return 1;
     }
 
-    let digits = if stone != 0 { stone.ilog10() + 1 } else { 0 };
     if stone == 0 {
-        count += apply(stone + 1, depth - 1);
-    } else if digits % 2 == 0 {
-        let factor = 10u64.pow(digits / 2);
+        apply(stone + 1, depth - 1)
+    } else if (stone.ilog10() + 1) % 2 == 0 {
+        let factor = 10u64.pow((stone.ilog10() + 1) / 2);
         let left = stone / factor;
-        let right = stone - left * factor;
-        count += 1;
-        count += apply(left, depth - 1);
-        count += apply(right, depth - 1);
+        let right = stone % factor;
+        apply(left, depth - 1) + apply(right, depth - 1)
     } else {
-        count += apply(stone * 2024, depth - 1);
+        apply(stone * 2024, depth - 1)
     }
-
-    count
 }
 
 #[derive(Default)]
@@ -37,19 +31,11 @@ impl AdventOfCodeDay for Solver {
     }
 
     fn solve_part1(input: &Self::ParsedInput<'_>) -> Self::Part1Output {
-        let mut count = input.len();
-        for stone in input {
-            count += apply(*stone, 25);
-        }
-        count
+        input.iter().map(|stone| apply(*stone, 25)).sum()
     }
 
     fn solve_part2(input: &Self::ParsedInput<'_>) -> Self::Part2Output {
-        let mut count = input.len();
-        for stone in input {
-            count += apply(*stone, 75);
-        }
-        count
+        input.iter().map(|stone| apply(*stone, 75)).sum()
     }
 }
 
