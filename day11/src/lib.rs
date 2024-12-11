@@ -31,11 +31,15 @@ impl AdventOfCodeDay for Solver {
     }
 
     fn solve_part1(input: &Self::ParsedInput<'_>) -> Self::Part1Output {
-        input.iter().map(|stone| apply(*stone, 25)).sum()
+        let res = input.iter().map(|stone| apply(*stone, 25)).sum();
+        memoized_flush_apply();
+        res
     }
 
     fn solve_part2(input: &Self::ParsedInput<'_>) -> Self::Part2Output {
-        input.iter().map(|stone| apply(*stone, 75)).sum()
+        let res = input.iter().map(|stone| apply(*stone, 75)).sum();
+        memoized_flush_apply();
+        res
     }
 }
 
