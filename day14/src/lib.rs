@@ -12,8 +12,8 @@ pub struct Robot {
 pub struct Solver;
 impl AdventOfCodeDay for Solver {
     type ParsedInput<'a> = Vec<Robot>;
-    type Part1Output = u32;
-    type Part2Output = u32;
+    type Part1Output = usize;
+    type Part2Output = usize;
 
     fn parse_input(input: &str) -> Self::ParsedInput<'_> {
         input
@@ -64,7 +64,46 @@ impl AdventOfCodeDay for Solver {
     }
 
     fn solve_part2(input: &Self::ParsedInput<'_>) -> Self::Part2Output {
-        todo!()
+        let width = 101;
+        let height = 103;
+        let mut steps = 1;
+        let mut robots = input.clone();
+        let mut map = vec![vec![0; width as usize]; height as usize];
+
+        loop {
+            for robot in robots.iter_mut() {
+                robot.x += robot.vx;
+                robot.x = robot.x.rem_euclid(width as i64);
+                robot.y += robot.vy;
+                robot.y = robot.y.rem_euclid(height as i64);
+            }
+
+            for row in map.iter_mut() {
+                for r in row {
+                    *r = 0;
+                }
+            }
+
+            for robot in robots.iter() {
+                map[robot.y as usize][robot.x as usize] += 1;
+            }
+
+            for row in map.iter() {
+                let mut n = 0;
+                for r in row.iter() {
+                    if *r != 0 {
+                        n += 1;
+                        if n > 25 {
+                            return steps as usize;
+                        }
+                    } else {
+                        n = 0;
+                    }
+                }
+            }
+
+            steps += 1;
+        }
     }
 }
 
@@ -584,6 +623,6 @@ p=1,51 v=69,79
     #[test]
     fn test_part2() {
         let parsed = Solver::parse_input(INPUT);
-        assert_eq!(Solver::solve_part2(&parsed), 0);
+        assert_eq!(Solver::solve_part2(&parsed), 7138);
     }
 }
