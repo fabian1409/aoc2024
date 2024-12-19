@@ -1,11 +1,11 @@
 use std::{
     cmp::Ordering,
-    collections::{BinaryHeap, HashMap},
+    collections::{BinaryHeap, HashMap, HashSet},
 };
 
 use aoc_traits::AdventOfCodeDay;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 enum Dir {
     North,
     East,
@@ -33,21 +33,15 @@ impl Dir {
     }
 }
 
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 struct State {
     cost: usize,
     position: Position,
     direction: Dir,
 }
 
-// The priority queue depends on `Ord`.
-// Explicitly implement the trait so the queue becomes a min-heap
-// instead of a max-heap.
 impl Ord for State {
     fn cmp(&self, other: &Self) -> Ordering {
-        // Notice that the we flip the ordering on costs.
-        // In case of a tie we compare positions - this step is necessary
-        // to make implementations of `PartialEq` and `Ord` consistent.
         other
             .cost
             .cmp(&self.cost)
@@ -55,7 +49,6 @@ impl Ord for State {
     }
 }
 
-// `PartialOrd` needs to be implemented as well.
 impl PartialOrd for State {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
@@ -63,6 +56,20 @@ impl PartialOrd for State {
 }
 
 type Position = (usize, usize);
+
+fn walk(
+    predecessors: &HashMap<(Position, Dir), Vec<(Position, Dir)>>,
+    pos: (Position, Dir),
+    path: &mut HashSet<(Position, Dir)>,
+) {
+    let preds = predecessors.get(&pos).unwrap();
+    path.insert(pos);
+    for pred in preds {
+        if !path.contains(pred) {
+            walk(predecessors, *pred, path);
+        }
+    }
+}
 
 #[derive(Default)]
 pub struct Solver;
@@ -99,87 +106,154 @@ impl AdventOfCodeDay for Solver {
     }
 
     fn solve_part1(input: &Self::ParsedInput<'_>) -> Self::Part1Output {
-        todo!()
-        // let map = &input.0;
-        // let start = input.1;
-        // let end = input.2;
+        let map = &input.0;
+        let start = input.1;
+        let end = input.2;
 
-        // let rows = map.len();
-        // let cols = map[0].len();
+        let rows = map.len();
+        let cols = map[0].len();
 
-        // let mut dist = HashMap::new();
-        // for row in 0..rows {
-        //     for col in 0..cols {
-        //         dist.insert((row, col), usize::MAX - 1);
-        //     }
-        // }
+        let mut dist = HashMap::new();
+        for row in 0..rows {
+            for col in 0..cols {
+                for dir in [Dir::North, Dir::East, Dir::South, Dir::West] {
+                    dist.insert(((row, col), dir), usize::MAX);
+                }
+            }
+        }
 
-        // let mut heap = BinaryHeap::new();
+        dist.insert((start, Dir::East), 0);
 
-        // // We're at `start`, with a zero cost
-        // // dist.insert(start, 0);
-        // heap.push(State {
-        //     cost: 0,
-        //     position: start,
-        //     direction: Dir::East,
-        // });
+        let mut heap = BinaryHeap::new();
+        heap.push(State {
+            cost: 0,
+            position: start,
+            direction: Dir::East,
+        });
 
-        // // Examine the frontier with lower cost nodes first (min-heap)
-        // while let Some(State {
-        //     cost,
-        //     position,
-        //     direction,
-        // }) = heap.pop()
-        // {
-        //     // Alternatively we could have continued to find all shortest paths
-        //     println!("cur pos {position:?}");
-        //     if position == end {
-        //         return cost;
-        //     }
+        while let Some(State {
+            cost,
+            position,
+            direction,
+        }) = heap.pop()
+        {
+            if position == end {
+                return cost;
+            }
 
-        //     // Important as we may have already found a better way
-        //     if cost > *dist.get(&position).unwrap() {
-        //         continue;
-        //     }
+            if cost > *dist.get(&(position, direction)).unwrap() {
+                continue;
+            }
 
-        //     // For each node we can reach, see if we can find a way with
-        //     // a lower cost going through this node
-        //     for dir in direction.next() {
-        //         println!("checking {dir:?}");
-        //         let (row, col, cost_) = if dir == direction {
-        //             println!("same dir -> advance");
-        //             let (row, col) = dir.offset(position.0, position.1);
-        //             if map[row][col] == b'#' {
-        //                 println!("wall, so cont");
-        //                 (row, col, usize::MAX)
-        //             } else {
-        //                 (row, col, 1)
-        //             }
-        //         } else {
-        //             println!("left or eight dir -> just turn");
-        //             (position.0, position.1, 1000)
-        //         };
+            for dir in direction.next() {
+                let (row, col, cost_) = if dir == direction {
+                    let (row, col) = dir.offset(position.0, position.1);
+                    if map[row][col] != b'#' {
+                        (row, col, 1)
+                    } else {
+                        continue;
+                    }
+                } else {
+                    (position.0, position.1, 1000)
+                };
 
-        //         let next = State {
-        //             cost: cost.saturating_add(cost_),
-        //             position: (row, col),
-        //             direction: dir,
-        //         };
+                let next = State {
+                    cost: cost.saturating_add(cost_),
+                    position: (row, col),
+                    direction: dir,
+                };
 
-        //         // If so, add it to the frontier and continue
-        //         if next.cost < *dist.get(&next.position).unwrap() {
-        //             println!("pushed {row}, {col} with cost {cost_} dir = {dir:?}");
-        //             heap.push(next);
-        //             // Relaxation, we have now found a better way
-        //             dist.insert(next.position, next.cost);
-        //         }
-        //     }
-        // }
-        // 0
+                let cur_cost = *dist.get(&(next.position, dir)).unwrap();
+                if next.cost < cur_cost {
+                    heap.push(next);
+                    dist.insert((next.position, dir), next.cost);
+                }
+            }
+        }
+        0
     }
 
     fn solve_part2(input: &Self::ParsedInput<'_>) -> Self::Part2Output {
-        todo!()
+        let map = &input.0;
+        let start = input.1;
+        let end = input.2;
+
+        let rows = map.len();
+        let cols = map[0].len();
+
+        let mut dist = HashMap::new();
+        let mut predecessors = HashMap::new();
+        for row in 0..rows {
+            for col in 0..cols {
+                for dir in [Dir::North, Dir::East, Dir::South, Dir::West] {
+                    dist.insert(((row, col), dir), usize::MAX);
+                    predecessors.insert(((row, col), dir), Vec::new());
+                }
+            }
+        }
+
+        dist.insert((start, Dir::East), 0);
+
+        let mut heap = BinaryHeap::new();
+        heap.push(State {
+            cost: 0,
+            position: start,
+            direction: Dir::East,
+        });
+
+        while let Some(State {
+            cost,
+            position,
+            direction,
+        }) = heap.pop()
+        {
+            if cost > *dist.get(&(position, direction)).unwrap() {
+                continue;
+            }
+
+            for dir in direction.next() {
+                let (row, col, cost_) = if dir == direction {
+                    let (row, col) = dir.offset(position.0, position.1);
+                    if map[row][col] != b'#' {
+                        (row, col, 1)
+                    } else {
+                        continue;
+                    }
+                } else {
+                    (position.0, position.1, 1000)
+                };
+
+                let next = State {
+                    cost: cost.saturating_add(cost_),
+                    position: (row, col),
+                    direction: dir,
+                };
+
+                let cur_cost = *dist.get(&(next.position, dir)).unwrap();
+                if next.cost < cur_cost {
+                    heap.push(next);
+                    dist.insert((next.position, dir), next.cost);
+                    predecessors.insert((next.position, dir), vec![(position, direction)]);
+                } else if next.cost == cur_cost {
+                    predecessors
+                        .entry((next.position, dir))
+                        .or_default()
+                        .push((position, direction));
+                }
+            }
+        }
+
+        let mut path = HashSet::new();
+        for dir in [Dir::North, Dir::East, Dir::South, Dir::West] {
+            walk(&predecessors, (end, dir), &mut path);
+        }
+
+        let mut path_ = HashSet::new();
+        for (pos, _) in path.iter() {
+            path_.insert(pos);
+        }
+
+        path_.len()
     }
 }
 
@@ -208,12 +282,12 @@ mod tests {
     #[test]
     fn test_part1() {
         let parsed = Solver::parse_input(INPUT);
-        assert_eq!(Solver::solve_part1(&parsed), 11);
+        assert_eq!(Solver::solve_part1(&parsed), 7036);
     }
 
     #[test]
     fn test_part2() {
         let parsed = Solver::parse_input(INPUT);
-        assert_eq!(Solver::solve_part2(&parsed), 0);
+        assert_eq!(Solver::solve_part2(&parsed), 45);
     }
 }
