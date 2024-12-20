@@ -2,22 +2,7 @@ use std::collections::HashMap;
 
 use aoc_traits::AdventOfCodeDay;
 
-fn possible1(design: &str, patterns: &[&str]) -> bool {
-    if design.is_empty() {
-        return true;
-    }
-    for pat in patterns.iter() {
-        if pat.len() <= design.len()
-            && &design[..pat.len()] == *pat
-            && possible1(&design[pat.len()..], patterns)
-        {
-            return true;
-        }
-    }
-    false
-}
-
-fn possible2(design: &str, patterns: &[&str], cache: &mut HashMap<String, usize>) -> usize {
+fn possible<'a>(design: &'a str, patterns: &[&str], cache: &mut HashMap<&'a str, usize>) -> usize {
     if design.is_empty() {
         return 1;
     }
@@ -26,11 +11,13 @@ fn possible2(design: &str, patterns: &[&str], cache: &mut HashMap<String, usize>
     }
     let mut count = 0;
     for pat in patterns.iter() {
-        if pat.len() <= design.len() && &design[..pat.len()] == *pat {
-            count += possible2(&design[pat.len()..], patterns, cache);
+        if let Some(rest) = design.strip_prefix(pat) {
+            let n = possible(rest, patterns, cache);
+            cache.insert(rest, n);
+            count += n;
         }
     }
-    cache.insert(design.to_owned(), count);
+    cache.insert(design, count);
     count
 }
 
@@ -51,21 +38,20 @@ impl AdventOfCodeDay for Solver {
     fn solve_part1(input: &Self::ParsedInput<'_>) -> Self::Part1Output {
         let patterns = &input.0;
         let designs = &input.1;
+        let mut cache = HashMap::new();
         designs
             .iter()
-            .map(|design| if possible1(design, patterns) { 1 } else { 0 })
-            .sum()
+            .filter(|design| possible(design, patterns, &mut cache) > 0)
+            .count()
     }
 
     fn solve_part2(input: &Self::ParsedInput<'_>) -> Self::Part2Output {
         let patterns = &input.0;
         let designs = &input.1;
+        let mut cache = HashMap::new();
         designs
             .iter()
-            .map(|design| {
-                let mut cache = HashMap::new();
-                possible2(design, patterns, &mut cache)
-            })
+            .map(|design| possible(design, patterns, &mut cache))
             .sum()
     }
 }
